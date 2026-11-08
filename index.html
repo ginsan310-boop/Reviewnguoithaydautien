@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dưới Bóng Hai Cây Phong - Người Thầy Đầu Tiên</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Tone.js for Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                    },
+                    colors: {
+                        autumn: {
+                            50: '#fdfaf6',
+                            100: '#f9f1e7',
+                            200: '#f1dec8',
+                            300: '#e6c49f',
+                            400: '#d8a16c',
+                            500: '#cc8344',
+                            600: '#be6b36',
+                            700: '#9e532e',
+                            800: '#80442b',
+                            900: '#683925',
+                        },
+                        poplar: {
+                            500: '#2d6a4f',
+                            600: '#1b4332',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #fdfaf6;
+            color: #3d2817;
+            overflow-x: hidden;
+        }
+
+        /* Hiệu ứng lá phong rơi nhẹ nhàng */
+        .leaf {
+            position: fixed;
+            top: -10%;
+            z-index: 0;
+            pointer-events: none;
+            animation: fall linear infinite;
+            opacity: 0.55;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10vh) translateX(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(50vh) translateX(35px) rotate(180deg);
+            }
+            100% {
+                transform: translateY(110vh) translateX(-25px) rotate(360deg);
+            }
+        }
+
+        /* Hiệu ứng nút bấm trò chơi */
+        .game-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 0 #80442b;
+        }
+        .game-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #80442b;
+        }
+
+        .card-glass {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(216, 161, 108, 0.35);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f9f1e7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d8a16c;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #be6b36;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative selection:bg-autumn-300 selection:text-autumn-900">
+
+    <!-- Container Lá Rơi -->
+    <div id="leaves-container" aria-hidden="true"></div>
+
+    <!-- Header & Navigation -->
+    <header class="sticky top-0 z-30 bg-autumn-50/95 backdrop-blur-md border-b border-autumn-200 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchMainTab('home')">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-autumn-500 to-autumn-700 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-tree text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-serif font-bold text-lg sm:text-xl text-autumn-900 leading-tight">Người Thầy Đầu Tiên</h1>
+                    <p class="text-xs text-autumn-700 font-medium">Tsinghiz Aitmatov • Làng Kurkurêu</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex items-center gap-1.5 sm:gap-2 bg-autumn-100 p-1.5 rounded-2xl border border-autumn-200">
+                <button onclick="switchMainTab('home')" id="tab-home" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-autumn-600 text-white shadow-sm">
+                    <i class="fa-solid fa-compass mr-1.5"></i>Khám Phá
+                </button>
+                <button onclick="switchMainTab('game')" id="tab-game" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-autumn-800 hover:bg-autumn-200/70">
+                    <i class="fa-solid fa-gamepad mr-1.5"></i>Trò Chơi
+                </button>
+                <button onclick="switchMainTab('forum')" id="tab-forum" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-autumn-800 hover:bg-autumn-200/70 flex items-center">
+                    <i class="fa-solid fa-feather-pointed mr-1.5"></i>Góc Chia Sẻ
+                    <span id="comment-badge" class="ml-1.5 px-1.5 py-0.5 text-[10px] bg-autumn-500 text-white rounded-full">0</span>
+                </button>
+            </nav>
+
+            <!-- Sound & Score Status -->
+            <div class="hidden md:flex items-center gap-3">
+                <div class="bg-autumn-100 border border-autumn-300 px-3.5 py-1.5 rounded-xl flex items-center gap-2">
+                    <i class="fa-brands fa-canadian-maple-leaf text-autumn-600"></i>
+                    <span class="text-xs font-medium text-autumn-800">Điểm tích lũy:</span>
+                    <span id="global-score" class="font-bold text-sm text-autumn-900">0</span>
+                </div>
+                <button onclick="toggleSound()" id="sound-btn" class="w-9 h-9 rounded-xl bg-autumn-100 hover:bg-autumn-200 border border-autumn-300 flex items-center justify-center text-autumn-800 transition" title="Bật/Tắt âm thanh">
+                    <i class="fa-solid fa-volume-high" id="sound-icon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-6 z-10">
+
+        <!-- ==================== TAB 1: TRANG CHỦ KHÁM PHÁ ==================== -->
+        <section id="section-home" class="space-y-8 animate-fadeIn">
+            <!-- Hero Banner -->
+            <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-autumn-900 via-autumn-800 to-autumn-700 text-white shadow-xl border border-autumn-600">
+                <div class="grid md:grid-cols-12 items-center">
+                    <div class="md:col-span-7 p-6 sm:p-10 space-y-4">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-autumn-100 text-xs font-medium">
+                            <i class="fa-solid fa-book-open"></i> Trải nghiệm tương tác sau khi đọc tác phẩm
+                        </div>
+                        <h2 class="font-serif text-2xl sm:text-4xl font-bold leading-snug">
+                            "Dưới bóng hai cây phong trên đồi Kurkurêu..."
+                        </h2>
+                        <p class="text-autumn-100 text-sm sm:text-base leading-relaxed">
+                            Cùng ngược dòng thời gian trở về năm 1924 tại thảo nguyên Kirghizi xa xôi, nơi người thầy giáo trẻ Đuysen đã một mình đắp lò, lội suối bế học trò và gieo mầm tri thức cùng cô học trò nhỏ Antưnai.
+                        </p>
+                        <div class="pt-2 flex flex-wrap gap-3">
+                            <button onclick="switchMainTab('game')" class="game-btn px-6 py-3 rounded-2xl bg-autumn-400 hover:bg-autumn-300 text-autumn-950 font-bold text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-play"></i> Bắt Đầu Trò Chơi Ngay
+                            </button>
+                            <button onclick="switchMainTab('forum')" class="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold text-sm flex items-center gap-2 transition">
+                                <i class="fa-solid fa-pen-nib"></i> Viết Cảm Nhận Của Bạn
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Minh họa SVG Nghệ thuật Hai Cây Phong -->
+                    <div class="md:col-span-5 p-6 flex justify-center items-center bg-gradient-to-t from-black/20 to-transparent">
+                        <svg viewBox="0 0 320 260" class="w-full max-w-[280px] drop-shadow-lg" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Mặt trời hoàng hôn -->
+                            <circle cx="160" cy="145" r="75" fill="#f59e0b" opacity="0.25" />
+                            <circle cx="160" cy="145" r="52" fill="#fbbf24" opacity="0.4" />
+                            <!-- Dãy núi xa -->
+                            <path d="M0 210 L70 150 L140 195 L220 135 L320 205 L320 260 L0 260 Z" fill="#5c3422" opacity="0.6"/>
+                            <!-- Đồi Trường Đuysen -->
+                            <path d="M0 230 Q160 165 320 230 L320 260 L0 260 Z" fill="#3d2417" />
+                            <!-- Tán cây phong 1 -->
+                            <ellipse cx="135" cy="105" rx="36" ry="52" fill="#d97706" />
+                            <ellipse cx="128" cy="95" rx="26" ry="40" fill="#f59e0b" />
+                            <!-- Tán cây phong 2 -->
+                            <ellipse cx="185" cy="112" rx="34" ry="48" fill="#b45309" />
+                            <ellipse cx="192" cy="102" rx="24" ry="38" fill="#d97706" />
+                            <!-- Thân cây phong 1 -->
+                            <path d="M135 200 L135 90 M135 140 L118 118 M135 125 L150 105" stroke="#29170e" stroke-width="6" stroke-linecap="round"/>
+                            <!-- Thân cây phong 2 -->
+                            <path d="M185 202 L185 98 M185 145 L202 125 M185 130 L170 112" stroke="#29170e" stroke-width="5.5" stroke-linecap="round"/>
+                            <!-- Chim bay -->
+                            <path d="M75 75 Q82 68 88 75 Q94 68 101 75" stroke="#fef3c7" stroke-width="2" fill="none" />
+                            <path d="M235 65 Q240 60 245 65 Q250 60 255 65" stroke="#fef3c7" stroke-width="1.8" fill="none" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tóm tắt các điểm nhấn trong tác phẩm -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-serif font-bold text-xl text-autumn-900 flex items-center gap-2">
+                        <i class="fa-solid fa-bookmark text-autumn-600"></i> Những Dấu Ấn Không Quên Trong Tác Phẩm
+                    </h3>
+                    <span class="text-xs text-autumn-700">Nhấn vào từng thẻ để ôn lại chi tiết</span>
+                </div>
+
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Card 1 -->
+                    <div class="card-glass p-5 rounded-2xl shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                        <div>
+                            <div class="w-10 h-10 rounded-xl bg-autumn-100 text-autumn-700 flex items-center justify-center mb-3 font-bold">
+                                <i class="fa-solid fa-house-chimney-crack"></i>
+                            </div>
+                            <h4 class="font-serif font-bold text-base text-autumn-900 mb-1.5">Ngôi Trường Trên Đồi</h4>
+                            <p class="text-xs text-autumn-800 leading-relaxed">
+                                Từ chuồng ngựa cũ bỏ hoang của phú nông, thầy Đuysen một mình phạt cỏ, trát vách, sửa cửa, đắp lò sưởi và trải rơm khô làm lớp học đầu tiên cho trẻ em nghèo.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-autumn-200/60 flex items-center justify-between text-[11px] text-autumn-600 font-semibold">
+                            <span>Mùa thu năm 1924</span>
+                            <i class="fa-solid fa-seedling"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="card-glass p-5 rounded-2xl shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                        <div>
+                            <div class="w-10 h-10 rounded-xl bg-autumn-100 text-autumn-700 flex items-center justify-center mb-3 font-bold">
+                                <i class="fa-solid fa-water"></i>
+                            </div>
+                            <h4 class="font-serif font-bold text-base text-autumn-900 mb-1.5">Dòng Suối Mùa Đông</h4>
+                            <p class="text-xs text-autumn-800 leading-relaxed">
+                                Giữa dòng nước băng buốt cóng, thầy Đuysen lưng cõng tay bế từng học trò qua suối, bất chấp lời chế giễu của bọn nhà giàu đội mũ lông cáo đỏ.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-autumn-200/60 flex items-center justify-between text-[11px] text-autumn-600 font-semibold">
+                            <span>Tình thương bao la</span>
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="card-glass p-5 rounded-2xl shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                        <div>
+                            <div class="w-10 h-10 rounded-xl bg-autumn-100 text-autumn-700 flex items-center justify-center mb-3 font-bold">
+                                <i class="fa-solid fa-tree"></i>
+                            </div>
+                            <h4 class="font-serif font-bold text-base text-autumn-900 mb-1.5">Hai Cây Phong Non</h4>
+                            <p class="text-xs text-autumn-800 leading-relaxed">
+                                Thầy Đuysen đem hai cây phong non về trồng cùng Antưnai với lời gửi gắm: "Em sẽ trưởng thành, sẽ trở thành người thông thái... ngôi sao nhỏ trong sáng của thầy".
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-autumn-200/60 flex items-center justify-between text-[11px] text-autumn-600 font-semibold">
+                            <span>Biểu tượng ước mơ</span>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div class="card-glass p-5 rounded-2xl shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                        <div>
+                            <div class="w-10 h-10 rounded-xl bg-autumn-100 text-autumn-700 flex items-center justify-center mb-3 font-bold">
+                                <i class="fa-solid fa-palette"></i>
+                            </div>
+                            <h4 class="font-serif font-bold text-base text-autumn-900 mb-1.5">Bức Tranh Dang Dở</h4>
+                            <p class="text-xs text-autumn-800 leading-relaxed">
+                                Người họa sĩ đồng hương trăn trở bên giá vẽ trong ánh bình minh, mong vẽ nên bức tranh xứng đáng với tâm hồn vĩ đại của "Người thầy đầu tiên".
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-autumn-200/60 flex items-center justify-between text-[11px] text-autumn-600 font-semibold">
+                            <span>Nghệ thuật & Tri ân</span>
+                            <i class="fa-solid fa-paintbrush"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: TRÒ CHƠI TƯƠNG TÁC ==================== -->
+        <section id="section-game" class="hidden space-y-6 animate-fadeIn">
+            <!-- Thanh chọn Chế độ chơi -->
+            <div class="card-glass p-4 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="switchGameMode('quiz')" id="mode-quiz" class="game-mode-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-autumn-600 text-white shadow-sm transition">
+                        <i class="fa-solid fa-map-location-dot mr-1.5"></i>Chặng 1: Hành Trình Kurkurêu (10 Câu)
+                    </button>
+                    <button onclick="switchGameMode('match')" id="mode-match" class="game-mode-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-autumn-100 text-autumn-800 hover:bg-autumn-200 transition">
+                        <i class="fa-solid fa-puzzle-piece mr-1.5"></i>Chặng 2: Ghép Nối Ký Ức
+                    </button>
+                    <button onclick="switchGameMode('scramble')" id="mode-scramble" class="game-mode-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-autumn-100 text-autumn-800 hover:bg-autumn-200 transition">
+                        <i class="fa-solid fa-key mr-1.5"></i>Chặng 3: Giải Mã Từ Khóa
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3 ml-auto">
+                    <span class="text-xs font-medium text-autumn-700">Điểm của bạn:</span>
+                    <span id="game-score-display" class="px-3 py-1 rounded-lg bg-autumn-800 text-white font-bold text-sm">0 điểm</span>
+                </div>
+            </div>
+
+            <!-- CHẾ ĐỘ 1: TRẮC NGHIỆM HÀNH TRÌNH KURKURÊU -->
+            <div id="game-panel-quiz" class="card-glass rounded-3xl p-6 sm:p-8 shadow-md">
+                <!-- Progress Bar -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center text-xs font-semibold text-autumn-700 mb-2">
+                        <span id="quiz-progress-text">Câu hỏi 1 / 10</span>
+                        <span id="quiz-streak-text" class="text-autumn-600"><i class="fa-solid fa-fire"></i> Chuỗi đúng: 0</span>
+                    </div>
+                    <div class="w-full h-3 bg-autumn-100 rounded-full overflow-hidden border border-autumn-200">
+                        <div id="quiz-progress-bar" class="h-full bg-gradient-to-r from-autumn-500 to-autumn-600 transition-all duration-300" style="width: 10%"></div>
+                    </div>
+                </div>
+
+                <!-- Nội dung câu hỏi -->
+                <div id="quiz-question-container" class="space-y-6">
+                    <div class="bg-autumn-50 border border-autumn-200 rounded-2xl p-5">
+                        <span id="quiz-chapter-tag" class="inline-block px-2.5 py-1 rounded-md bg-autumn-200/80 text-autumn-900 text-xs font-bold mb-2">Bối cảnh</span>
+                        <h3 id="quiz-question-title" class="font-serif font-bold text-lg sm:text-xl text-autumn-950 leading-relaxed">
+                            Đang tải câu hỏi...
+                        </h3>
+                    </div>
+
+                    <!-- Các lựa chọn -->
+                    <div id="quiz-options" class="grid sm:grid-cols-2 gap-3.5"></div>
+
+                    <!-- Hộp giải thích sau khi chọn -->
+                    <div id="quiz-explanation-box" class="hidden p-4 rounded-2xl border bg-autumn-100/70 border-autumn-300 space-y-2">
+                        <div id="quiz-feedback-title" class="font-bold text-sm flex items-center gap-2"></div>
+                        <p id="quiz-explanation-text" class="text-xs sm:text-sm text-autumn-900 leading-relaxed"></p>
+                        <div class="pt-2 flex justify-end">
+                            <button onclick="nextQuizQuestion()" class="game-btn px-5 py-2 rounded-xl bg-autumn-600 hover:bg-autumn-500 text-white font-bold text-xs sm:text-sm">
+                                Tiếp tục <i class="fa-solid fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Màn hình tổng kết Quiz -->
+                <div id="quiz-result-container" class="hidden text-center py-8 space-y-5">
+                    <div class="w-20 h-20 rounded-3xl bg-autumn-100 border-2 border-autumn-400 text-autumn-600 flex items-center justify-center mx-auto text-4xl shadow-inner">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <h3 class="font-serif font-bold text-2xl text-autumn-900">Hoàn Thành Hành Trình Kurkurêu!</h3>
+                    <p id="quiz-final-message" class="text-sm text-autumn-800 max-w-md mx-auto leading-relaxed"></p>
+                    <div class="inline-block bg-autumn-100 border border-autumn-300 px-6 py-3 rounded-2xl">
+                        <span class="text-xs text-autumn-700 block">Kết quả đạt được</span>
+                        <span id="quiz-final-score" class="font-serif font-bold text-2xl text-autumn-900">10 / 10</span>
+                    </div>
+                    <div class="flex justify-center flex-wrap gap-3 pt-2">
+                        <button onclick="restartQuiz()" class="px-5 py-2.5 rounded-xl bg-autumn-200 hover:bg-autumn-300 text-autumn-900 font-bold text-sm transition">
+                            <i class="fa-solid fa-rotate-right mr-1.5"></i>Chơi Lại Chặng 1
+                        </button>
+                        <button onclick="switchGameMode('match')" class="game-btn px-5 py-2.5 rounded-xl bg-autumn-600 hover:bg-autumn-500 text-white font-bold text-sm">
+                            Sang Chặng 2: Ghép Nối <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHẾ ĐỘ 2: GHÉP NỐI KÝ ỨC -->
+            <div id="game-panel-match" class="hidden card-glass rounded-3xl p-6 sm:p-8 shadow-md space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-autumn-200 pb-4">
+                    <div>
+                        <h3 class="font-serif font-bold text-xl text-autumn-900">Ghép Nối Biểu Tượng & Nhân Vật</h3>
+                        <p class="text-xs sm:text-sm text-autumn-700">Hãy chọn 1 thẻ ở cột bên trái rồi nhấn vào ý nghĩa tương ứng ở cột bên phải.</p>
+                    </div>
+                    <button onclick="initMatchingGame()" class="px-3.5 py-2 rounded-xl bg-autumn-100 hover:bg-autumn-200 text-autumn-800 text-xs font-semibold transition">
+                        <i class="fa-solid fa-shuffle mr-1"></i> Trộn Lại Thẻ
+                    </button>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Cột Trái -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-autumn-600">Chi tiết / Nhân vật</h4>
+                        <div id="match-left-col" class="space-y-2.5"></div>
+                    </div>
+                    <!-- Cột Phải -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-autumn-600">Ý nghĩa / Sự kiện trong truyện</h4>
+                        <div id="match-right-col" class="space-y-2.5"></div>
+                    </div>
+                </div>
+
+                <div id="match-success-banner" class="hidden p-5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-circle-check text-2xl text-emerald-600"></i>
+                        <div>
+                            <h4 class="font-bold text-sm">Tuyệt vời! Bạn đã ghép chính xác toàn bộ các mảnh ghép!</h4>
+                            <p class="text-xs text-emerald-700">Bạn nắm rất vững hệ thống nhân vật và biểu tượng của tác phẩm.</p>
+                        </div>
+                    </div>
+                    <button onclick="switchGameMode('scramble')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition">
+                        Sang Chặng 3 <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CHẾ ĐỘ 3: GIẢI MÃ TỪ KHÓA -->
+            <div id="game-panel-scramble" class="hidden card-glass rounded-3xl p-6 sm:p-8 shadow-md space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-autumn-200 pb-4">
+                    <div>
+                        <h3 class="font-serif font-bold text-xl text-autumn-900">Giải Mã Từ Khóa Văn Học</h3>
+                        <p class="text-xs sm:text-sm text-autumn-700">Đọc gợi ý từ tác phẩm và sắp xếp hoặc nhập đúng từ khóa bí ẩn.</p>
+                    </div>
+                    <span id="scramble-counter" class="px-3 py-1 rounded-lg bg-autumn-100 border border-autumn-300 text-xs font-bold text-autumn-800">Từ khóa 1 / 5</span>
+                </div>
+
+                <div id="scramble-box" class="max-w-xl mx-auto space-y-5 py-2">
+                    <div class="p-5 rounded-2xl bg-autumn-50 border border-autumn-200 text-center space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-autumn-600">Gợi ý từ tác phẩm</span>
+                        <p id="scramble-hint" class="font-serif text-base sm:text-lg text-autumn-900 font-medium"></p>
+                    </div>
+
+                    <!-- Chữ cái xáo trộn -->
+                    <div id="scramble-letters" class="flex flex-wrap justify-center gap-2 py-2"></div>
+
+                    <!-- Ô nhập đáp án -->
+                    <div class="flex gap-2">
+                        <input type="text" id="scramble-input" placeholder="Nhập đáp án của bạn..." 
+                            class="flex-grow px-4 py-3 rounded-xl border border-autumn-300 bg-white focus:outline-none focus:ring-2 focus:ring-autumn-500 text-sm font-semibold uppercase tracking-wider text-center"
+                            onkeydown="if(event.key === 'Enter') checkScrambleAnswer()">
+                        <button onclick="checkScrambleAnswer()" class="game-btn px-6 py-3 rounded-xl bg-autumn-600 hover:bg-autumn-500 text-white font-bold text-sm">
+                            Kiểm Tra
+                        </button>
+                    </div>
+
+                    <div id="scramble-feedback" class="hidden text-center text-xs sm:text-sm font-semibold p-3 rounded-xl"></div>
+
+                    <div class="flex justify-between items-center pt-2">
+                        <button onclick="revealScrambleHint()" class="text-xs text-autumn-700 hover:text-autumn-900 underline font-medium">
+                            <i class="fa-regular fa-lightbulb mr-1"></i>Xem chữ cái đầu tiên
+                        </button>
+                        <button onclick="nextScrambleWord()" class="text-xs text-autumn-700 hover:text-autumn-900 font-semibold">
+                            Bỏ qua từ này <i class="fa-solid fa-forward-step ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: GÓC CHIA SẺ & LƯU TRỮ CẢM NHẬN ==================== -->
+        <section id="section-forum" class="hidden space-y-8 animate-fadeIn">
+            <div class="grid lg:grid-cols-12 gap-6 items-start">
+
+                <!-- Cột Trái: Form Gửi Bình Luận / Chia Sẻ -->
+                <div class="lg:col-span-5 card-glass p-6 rounded-3xl shadow-md space-y-4 lg:sticky lg:top-20">
+                    <div class="flex items-center gap-3 border-b border-autumn-200 pb-3">
+                        <div class="w-10 h-10 rounded-xl bg-autumn-600 text-white flex items-center justify-center">
+                            <i class="fa-solid fa-feather-pointed"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-serif font-bold text-lg text-autumn-900">Gửi Cảm Nhận Của Bạn</h3>
+                            <p class="text-xs text-autumn-700">Lưu trữ suy nghĩ sau khi đọc xong tác phẩm</p>
+                        </div>
+                    </div>
+
+                    <form id="comment-form" onsubmit="submitStudentComment(event)" class="space-y-4">
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-autumn-800 mb-1">Họ và tên học sinh *</label>
+                                <input type="text" id="student-name" required maxlength="50" placeholder="VD: Nguyễn Minh Anh"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-autumn-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-autumn-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-autumn-800 mb-1">Lớp *</label>
+                                <input type="text" id="student-class" required maxlength="15" placeholder="VD: 12A1"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-autumn-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-autumn-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-autumn-800 mb-1">Chủ đề bạn tâm đắc nhất</label>
+                            <select id="comment-topic" class="w-full px-3.5 py-2.5 rounded-xl border border-autumn-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-autumn-500">
+                                <option value="Hình tượng thầy Đuysen">🌟 Hình tượng người thầy Đuysen</option>
+                                <option value="Nhân vật Antưnai">🌸 Số phận & nghị lực của Antưnai</option>
+                                <option value="Biểu tượng hai cây phong">🍁 Biểu tượng hai cây phong trên đồi</option>
+                                <option value="Trăn trở của người họa sĩ">🎨 Trăn trở sáng tạo của người họa sĩ</option>
+                                <option value="Bài học về lòng biết ơn">❤️ Bài học về lòng biết ơn & tri thức</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold text-autumn-800">Nội dung chia sẻ / bình luận *</label>
+                                <button type="button" onclick="insertPromptSuggestion()" class="text-[11px] text-autumn-600 hover:text-autumn-800 font-semibold underline">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-0.5"></i>Gợi ý câu hỏi
+                                </button>
+                            </div>
+                            <textarea id="comment-content" required rows="5" maxlength="1200"
+                                placeholder="Chia sẻ chi tiết làm bạn xúc động nhất, hoặc suy nghĩ của bạn về tình thầy trò giữa Đuysen và Antưnai..."
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-autumn-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-autumn-500 leading-relaxed"></textarea>
+                        </div>
+
+                        <div id="form-status-msg" class="hidden text-xs font-semibold p-3 rounded-xl"></div>
+
+                        <button type="submit" id="submit-comment-btn" class="game-btn w-full py-3 rounded-xl bg-autumn-600 hover:bg-autumn-500 text-white font-bold text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Lưu Vào Sổ Lưu Bút Lớp Học
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Cột Phải: Danh sách Bình Luận Của Học Sinh -->
+                <div class="lg:col-span-7 space-y-4">
+                    <!-- Bộ lọc và Tìm kiếm -->
+                    <div class="card-glass p-4 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-comments text-autumn-600"></i>
+                            <h3 class="font-serif font-bold text-base sm:text-lg text-autumn-900">Sổ Lưu Bút Dưới Bóng Phong</h3>
+                            <span id="connection-indicator" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Đang đồng bộ...
+                            </span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                            <div class="relative flex-grow sm:flex-grow-0">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-autumn-500 text-xs"></i>
+                                <input type="text" id="filter-search" oninput="renderCommentsList()" placeholder="Tìm theo tên, lớp, nội dung..."
+                                    class="w-full sm:w-48 pl-8 pr-3 py-1.5 rounded-xl border border-autumn-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-autumn-500">
+                            </div>
+                            <select id="filter-topic" onchange="renderCommentsList()" class="px-3 py-1.5 rounded-xl border border-autumn-300 bg-white text-xs font-medium focus:outline-none">
+                                <option value="ALL">Tất cả chủ đề</option>
+                                <option value="Hình tượng thầy Đuysen">Hình tượng thầy Đuysen</option>
+                                <option value="Nhân vật Antưnai">Nhân vật Antưnai</option>
+                                <option value="Biểu tượng hai cây phong">Biểu tượng hai cây phong</option>
+                                <option value="Trăn trở của người họa sĩ">Trăn trở của người họa sĩ</option>
+                                <option value="Bài học về lòng biết ơn">Bài học về lòng biết ơn</option>
+                            </select>
+                            <button onclick="exportCommentsToText()" class="px-3 py-1.5 rounded-xl bg-autumn-100 hover:bg-autumn-200 border border-autumn-300 text-autumn-800 text-xs font-semibold transition" title="Tải xuống toàn bộ bình luận">
+                                <i class="fa-solid fa-download mr-1"></i>Xuất file
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách thẻ bình luận -->
+                    <div id="comments-list-container" class="space-y-3.5"></div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Modal xác nhận xóa bài chia sẻ (thay cho confirm) -->
+        <div id="delete-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-autumn-200 space-y-4 text-center">
+                <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-trash-can"></i>
+                </div>
+                <h4 class="font-serif font-bold text-lg text-autumn-950">Xóa bài cảm nhận này?</h4>
+                <p class="text-xs text-autumn-700 leading-relaxed">Bài chia sẻ sẽ được gỡ khỏi Sổ Lưu Bút trực tuyến của lớp học.</p>
+                <div class="flex gap-2.5 pt-2">
+                    <button onclick="closeDeleteModal()" class="flex-1 py-2.5 rounded-xl bg-autumn-100 hover:bg-autumn-200 text-autumn-900 font-semibold text-xs transition">
+                        Hủy bỏ
+                    </button>
+                    <button onclick="confirmDeleteComment()" id="confirm-delete-btn" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition">
+                        Đồng ý xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 border-t border-autumn-200 bg-autumn-100/60 py-5 text-center text-xs text-autumn-700 z-10">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p class="font-serif italic">"Hãy vẽ hai cây phong của Đuysen và Antưnai, chính hai cây phong đã cho tuổi thơ bao giây phút sướng vui..."</p>
+            <p>Không gian học tập tương tác Ngữ Văn • <span id="user-id-display" class="font-mono text-[10px] opacity-75"></span></p>
+        </div>
+    </footer>
+
+    <!-- ==================== LOGIC JAVASCRIPT & FIREBASE ==================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ------------------------------------------------------------------
+        // 1. DỮ LIỆU CÂU HỎI & TRÒ CHƠI DỰA SÁT NỘI DUNG TÁC PHẨM
+        // ------------------------------------------------------------------
+        const QUIZ_QUESTIONS = [
+            {
+                chapter: "Không gian làng Kurkurêu",
+                question: "Hai cây phong lớn nằm trên ngọn đồi phía trên làng Kurkurêu được người dân trong làng gọi bằng cái tên thân thuộc là gì?",
+                options: [
+                    "Đồi Gió Hoàng Thổ",
+                    "Trường Đuysen",
+                    "Trạm Hải Đăng Xanh",
+                    "Rừng Phong Kỷ Niệm"
+                ],
+                correct: 1,
+                explanation: "Trong truyện, quả đồi có hai cây phong được dân làng gọi là 'Trường Đuysen'. Hễ ai lạc ngựa hay lũ trẻ rủ nhau đi bắt tổ chim đều nhắc tới tên gọi 'Trường Đuysen'."
+            },
+            {
+                chapter: "Buổi đầu lập trường (1924)",
+                question: "Ngôi trường đầu tiên mà thầy Đuysen tự tay sửa sang, trát vách đất, đắp lò sưởi thực chất trước kia là nơi nào?",
+                options: [
+                    "Nhà kho chứa thóc của ủy ban huyện",
+                    "Một trạm gác cũ của đường sắt Kazakh",
+                    "Chuồng ngựa cũ bỏ hoang của tên phú nông",
+                    "Căn lều vải du mục bên bờ sông"
+                ],
+                correct: 2,
+                explanation: "Ngôi trường vốn là chuồng ngựa cũ bằng đất nện của phú nông bỏ hoang, mùa đông trước kia dùng để nhốt ngựa cái đẻ. Đuysen đã một mình phạt cỏ dại, trát vách và sửa cửa."
+            },
+            {
+                chapter: "Tấm lòng cô học trò nhỏ",
+                question: "Trong lần đầu tiên ghé thăm trường khi thầy Đuysen đang sửa sang, Antưnai đã quyết định làm hành động gì để giúp lớp học có cái đốt sưởi vào mùa đông?",
+                options: [
+                    "Trút lại bao kigiăc (phân gia súc khô) của mình ở cửa trường rồi chạy đi nhặt bao khác",
+                    "Mang tặng thầy Đuysen chiếc khăn trải bàn bằng nỉ của nhà chú thím",
+                    "Rủ ông cụ Kartanbai chặt củi thông mang lên đồi",
+                    "Lấy lúa mạch trong hố thóc của chú mang đổi lấy than đá"
+                ],
+                correct: 0,
+                explanation: "Dù các bạn gái sợ về muộn bị mắng, Antưnai đã dũng cảm quay lại trút bao kigiăc của mình dưới cửa trường rồi một mình chạy đi nhặt lại giữa hoàng hôn tối sẫm."
+            },
+            {
+                chapter: "Ký ức lớp học đầu tiên",
+                question: "Trong căn phòng học trải rơm nghèo nàn của thầy Đuysen, vật duy nhất được dán trang trọng trên bức vách lớp học là gì?",
+                options: [
+                    "Bản đồ vùng thảo nguyên Kirghizi",
+                    "Bức chân dung Lênin mặc áo dài quân nhân",
+                    "Tờ lịch năm 1924 của đoàn Komxômôn",
+                    "Bảng chữ cái viết bằng than củi trên giấy trắng"
+                ],
+                correct: 1,
+                explanation: "Đó là bức chân dung Lênin in trên giấy áp phích thường mà Antưnai luôn gọi thầm là bức chân dung Lênin 'của Đuysen' với ánh mắt hiền từ nhìn xuống các em nhỏ."
+            },
+            {
+                chapter: "Mùa đông giá buốt",
+                question: "Khi tiết trời sang đông, nước suối đóng băng lạnh buốt làm các em nhỏ bật khóc, thầy Đuysen đã làm gì?",
+                options: [
+                    "Cho học sinh nghỉ học suốt ba tháng mùa đông",
+                    "Mượn xe ngựa của lão Xatumkun chở học trò qua suối",
+                    "Lưng thì cõng, tay thì bế lần lượt đưa hết các em qua suối và đi chân trần xếp đá",
+                    "Chuyển lớp học xuống nhà ông bà cụ Kartanbai"
+                ],
+                correct: 2,
+                explanation: "Thầy Đuysen lưng cõng, tay bế từng em qua suối băng giá, bất chấp sự chế giễu độc ác của bọn nhà giàu đội mũ lông cáo đỏ cưỡi ngựa đi ngang qua."
+            },
+            {
+                chapter: "Đêm bão tuyết dữ dội",
+                question: "Vào cuối tháng Giêng khi lên huyện gia nhập Đảng và trở về trong đêm bão tuyết, biến cố nguy hiểm nào đã xảy ra với thầy Đuysen?",
+                options: [
+                    "Thầy bị bọn bạch vệ phục kích trên đèo",
+                    "Cầu gỗ qua sông bị lũ cuốn trôi làm thầy ngất xỉu",
+                    "Bầy chó sói đói rượt đuổi, vây sát đầu làng và xâu xé con ngựa của cụ Kartanbai",
+                    "Thầy bị lạc đường sang tận thảo nguyên Kazakh suốt một tuần"
+                ],
+                correct: 2,
+                explanation: "Vì giữ lời hứa với học trò là ngày mai bắt đầu học, thầy Đuysen quyết tâm về trong đêm bão tuyết. Đàn sói dữ đuổi sát đến đầu làng, con ngựa kiệt sức ngã gục làm mồi cho sói."
+            },
+            {
+                chapter: "Biểu tượng Hai Cây Phong",
+                question: "Khi thấy Antưnai lo sợ trước âm mưu ép gả làm vợ lẽ (tôkôn) của người thím độc ác, thầy Đuysen đã làm gì để tiếp thêm nghị lực và niềm tin cho cô bé?",
+                options: [
+                    "Mang hai cây phong non về cùng Antưnai trồng bên cạnh trường và đào rãnh dẫn nước",
+                    "Tặng Antưnai một hộp màu vẽ để cô vẽ lại cảnh mùa xuân",
+                    "Đưa Antưnai sang trốn ở làng bên cạnh ngay trong đêm",
+                    "Viết thư gửi thẳng lên Matxcơva nhờ viện hàn lâm giúp đỡ"
+                ],
+                correct: 0,
+                explanation: "Thầy mang hai cây phong non vừa cao bằng người Antưnai về cùng trồng, gửi gắm ước mơ rằng khi cây lớn lên, Antưnai cũng sẽ trưởng thành và trở thành một người thông thái."
+            },
+            {
+                chapter: "Bi kịch & Cuộc giải cứu",
+                question: "Sau khi bị bọn lão mặt đỏ đánh gãy tay, máu me bê bết để cướp Antưnai đi, thầy Đuysen đã làm cách nào để cứu cô học trò nhỏ?",
+                options: [
+                    "Một mình cầm gậy gỗ lén đột nhập vào lều lúc nửa đêm",
+                    "Đầu và tay quấn băng trắng, dẫn theo hai người công an có súng cưỡi ngựa đến bắt tên mặt đỏ",
+                    "Nhờ các bô lão trong làng mang cừu và ngựa lên núi chuộc Antưnai về",
+                    "Đợi đoàn lều du mục đi qua nhà ga rồi báo cho nhân viên đường sắt"
+                ],
+                correct: 1,
+                explanation: "Đến sáng ngày thứ ba, khi Antưnai đang tuyệt vọng đào đất dưới vách lều bằng móng tay rớm máu, thầy Đuysen đầu quấn băng, tay đeo băng đã dẫn hai công an đến giải cứu cô."
+            },
+            {
+                chapter: "Chuyến tàu đi về tương lai",
+                question: "Sau khi được giải cứu và tiễn ra nhà ga trong buổi chiều xuân, Antưnai được đưa đi học ở thành phố nào trước khi sau này đến Matxcơva?",
+                options: [
+                    "Thành phố Tasken",
+                    "Thành phố Lêningrat",
+                    "Thành phố Kiev",
+                    "Thành phố Almaty"
+                ],
+                correct: 0,
+                explanation: "Thầy Đuysen đã tiễn Antưnai lên chuyến tàu hỏa đi đến nhà nuôi trẻ ở Tasken để bắt đầu con đường học vấn, và về sau bà trở thành nữ Viện sĩ triết học Xulaimanôvna."
+            },
+            {
+                chapter: "Trăn trở của người nghệ sĩ",
+                question: "Ở phần cuối tác phẩm, nhân vật 'tôi' (người họa sĩ) đã dự định đặt tên cho bức tranh tâm huyết vẽ về thầy Đuysen và Antưnai là gì?",
+                options: [
+                    "Mùa Thu Làng Kurkurêu",
+                    "Người Thầy Đầu Tiên",
+                    "Chuyến Tàu Qua Thảo Nguyên",
+                    "Bình Minh Trên Rặng Núi Đen"
+                ],
+                correct: 1,
+                explanation: "Người họa sĩ trăn trở với nhiều phác thảo: vẽ hai cây phong, vẽ cảnh thầy Đuysen bế trẻ qua suối, hay cảnh tiễn Antưnai ở nhà ga, với tên bức tranh đề là 'Người thầy đầu tiên'."
+            }
+        ];
+
+        const MATCH_PAIRS = [
+            { id: 'm1', left: "Thầy giáo Đuysen", right: "Đoàn viên Komxômôn kiên cường mở trường, về già làm người đưa thư của nông trường" },
+            { id: 'm2', left: "Viện sĩ Antưnai Xulaimanôvna", right: "Cô bé mồ côi năm xưa được thầy Đuysen gọi là 'dòng suối trong trẻo', 'ngôi sao nhỏ'" },
+            { id: 'm3', left: "Hai cây phong trên đồi", right: "Ngọn hải đăng xanh rì rào gió hát, minh chứng cho tình thầy trò và khát vọng vươn xa" },
+            { id: 'm4', left: "Ông bà cụ Kartanbai & Xaikan", right: "Những người hàng xóm nghèo phúc hậu, sẵn sàng mất con ngựa duy nhất miễn sao thầy Đuysen bình an" },
+            { id: 'm5', left: "Bao kigiăc mùa thu", right: "Quyết định độc lập đầu tiên của Antưnai để đền đáp nụ cười ấm áp của người thầy" },
+            { id: 'm6', left: "Người họa sĩ kể chuyện", right: "Người con làng Kurkurêu khao khát dùng cọ vẽ truyền lại câu chuyện cho thế hệ trẻ" }
+        ];
+
+        const SCRAMBLE_WORDS = [
+            {
+                word: "KURKUREU",
+                displayWord: "KURKURÊU",
+                hint: "Tên ngôi làng nhỏ nằm ven chân núi trên cao nguyên, quê hương của thầy Đuysen, bà Antưnai và người họa sĩ."
+            },
+            {
+                word: "DUYSEN",
+                displayWord: "ĐUYSEN",
+                hint: "Tên người thầy giáo đầu tiên mặc chiếc áo choàng dạ đen bộ đội, người đã thắp sáng tri thức cho lũ trẻ nghèo."
+            },
+            {
+                word: "ANTUNAI",
+                displayWord: "ANTƯNAI",
+                hint: "Tên cô học trò mồ côi hiếu học, sau này trở thành nữ Viện sĩ triết học nổi tiếng ở Matxcơva."
+            },
+            {
+                word: "CAYPHONG",
+                displayWord: "CÂY PHONG",
+                hint: "Loài cây sinh đôi đứng sát cánh bên nhau trên đỉnh đồi mà thầy trò Đuysen đã tự tay trồng vào mùa xuân."
+            },
+            {
+                word: "TASKEN",
+                displayWord: "TASKEN",
+                hint: "Tên thành phố lớn nơi Antưnai được gửi đến học tập sau khi rời nhà ga vùng núi."
+            }
+        ];
+
+        // ------------------------------------------------------------------
+        // 2. BIẾN TRẠNG THÁI TOÀN CỤC & ÂM THANH TONE.JS
+        // ------------------------------------------------------------------
+        let soundEnabled = true;
+        let synth = null;
+
+        let globalScore = 0;
+        let currentQuizIndex = 0;
+        let quizScoreCount = 0;
+        let quizStreak = 0;
+        let quizAnswered = false;
+
+        let selectedLeftMatch = null;
+        let matchedIds = new Set();
+
+        let currentScrambleIndex = 0;
+        let solvedScrambles = new Set();
+
+        // Firebase variables
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'nguoi-thay-dau-tien-app';
+        let cloudComments = [];
+        let likedCommentIds = new Set();
+        let pendingDeleteId = null;
+
+        function playTone(type) {
+            if (!soundEnabled || typeof Tone === 'undefined') return;
+            try {
+                if (!synth) {
+                    synth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.02, decay: 0.1, sustain: 0.1, release: 0.5 }
+                    }).toDestination();
+                    synth.volume.value = -10;
+                }
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const now = Tone.now();
+                if (type === 'correct') {
+                    synth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
+                } else if (type === 'wrong') {
+                    synth.triggerAttackRelease(["F3", "B2"], "8n", now);
+                } else if (type === 'click') {
+                    synth.triggerAttackRelease(["A4"], "32n", now);
+                } else if (type === 'win') {
+                    synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n", now);
+                }
+            } catch (e) {}
+        }
+
+        window.toggleSound = function() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            icon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-autumn-500';
+            if (soundEnabled) playTone('click');
+        };
+
+        function addScore(points) {
+            globalScore += points;
+            document.getElementById('global-score').textContent = globalScore;
+            document.getElementById('game-score-display').textContent = `${globalScore} điểm`;
+        }
+
+        // ------------------------------------------------------------------
+        // 3. ĐIỀU HƯỚNG TAB & CHẾ ĐỘ CHƠI
+        // ------------------------------------------------------------------
+        window.switchMainTab = function(tabName) {
+            playTone('click');
+            ['home', 'game', 'forum'].forEach(t => {
+                document.getElementById(`section-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) {
+                    btn.className = "nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-autumn-800 hover:bg-autumn-200/70";
+                }
+            });
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            if (activeBtn) {
+                activeBtn.className = "nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-autumn-600 text-white shadow-sm";
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.switchGameMode = function(modeName) {
+            playTone('click');
+            ['quiz', 'match', 'scramble'].forEach(m => {
+                document.getElementById(`game-panel-${m}`).classList.add('hidden');
+                const btn = document.getElementById(`mode-${m}`);
+                if (btn) {
+                    btn.className = "game-mode-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-autumn-100 text-autumn-800 hover:bg-autumn-200 transition";
+                }
+            });
+            document.getElementById(`game-panel-${modeName}`).classList.remove('hidden');
+            const activeModeBtn = document.getElementById(`mode-${modeName}`);
+            if (activeModeBtn) {
+                activeModeBtn.className = "game-mode-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-autumn-600 text-white shadow-sm transition";
+            }
+        };
+
+        // ------------------------------------------------------------------
+        // 4. LOGIC TRÒ CHƠI 1: TRẮC NGHIỆM
+        // ------------------------------------------------------------------
+        function renderQuizQuestion() {
+            quizAnswered = false;
+            const q = QUIZ_QUESTIONS[currentQuizIndex];
+            const total = QUIZ_QUESTIONS.length;
+
+            document.getElementById('quiz-progress-text').textContent = `Câu hỏi ${currentQuizIndex + 1} / ${total}`;
+            document.getElementById('quiz-streak-text').innerHTML = `<i class="fa-solid fa-fire"></i> Chuỗi đúng: ${quizStreak}`;
+            document.getElementById('quiz-progress-bar').style.width = `${((currentQuizIndex + 1) / total) * 100}%`;
+
+            document.getElementById('quiz-chapter-tag').textContent = q.chapter;
+            document.getElementById('quiz-question-title').textContent = q.question;
+
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            document.getElementById('quiz-explanation-box').classList.add('hidden');
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "game-btn text-left p-4 rounded-2xl bg-white border border-autumn-300 hover:border-autumn-500 text-autumn-900 font-medium text-xs sm:text-sm flex items-start gap-3 transition shadow-sm";
+                btn.innerHTML = `
+                    <span class="w-6 h-6 rounded-lg bg-autumn-100 text-autumn-800 font-bold flex items-center justify-center shrink-0 text-xs">${String.fromCharCode(65 + idx)}</span>
+                    <span class="flex-grow pt-0.5">${opt}</span>
+                `;
+                btn.onclick = () => selectQuizAnswer(idx);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-question-container').classList.remove('hidden');
+            document.getElementById('quiz-result-container').classList.add('hidden');
+        }
+
+        function selectQuizAnswer(selectedIdx) {
+            if (quizAnswered) return;
+            quizAnswered = true;
+
+            const q = QUIZ_QUESTIONS[currentQuizIndex];
+            const optionsContainer = document.getElementById('quiz-options');
+            const buttons = optionsContainer.children;
+
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                if (i === q.correct) {
+                    buttons[i].className = "game-btn text-left p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-500 text-emerald-950 font-medium text-xs sm:text-sm flex items-start gap-3 shadow-sm";
+                } else if (i === selectedIdx) {
+                    buttons[i].className = "game-btn text-left p-4 rounded-2xl bg-rose-50 border-2 border-rose-500 text-rose-950 font-medium text-xs sm:text-sm flex items-start gap-3 shadow-sm";
+                } else {
+                    buttons[i].style.opacity = "0.5";
+                }
+            }
+
+            const isCorrect = selectedIdx === q.correct;
+            const feedbackTitle = document.getElementById('quiz-feedback-title');
+            const explanationText = document.getElementById('quiz-explanation-text');
+            const expBox = document.getElementById('quiz-explanation-box');
+
+            expBox.classList.remove('hidden');
+
+            if (isCorrect) {
+                playTone('correct');
+                quizScoreCount++;
+                quizStreak++;
+                addScore(10);
+                feedbackTitle.className = "font-bold text-sm flex items-center gap-2 text-emerald-700";
+                feedbackTitle.innerHTML = `<i class="fa-solid fa-circle-check text-lg"></i> Chính xác! Tuyệt vời!`;
+            } else {
+                playTone('wrong');
+                quizStreak = 0;
+                feedbackTitle.className = "font-bold text-sm flex items-center gap-2 text-rose-700";
+                feedbackTitle.innerHTML = `<i class="fa-solid fa-circle-xmark text-lg"></i> Chưa chính xác!`;
+            }
+
+            document.getElementById('quiz-streak-text').innerHTML = `<i class="fa-solid fa-fire"></i> Chuỗi đúng: ${quizStreak}`;
+            explanationText.textContent = q.explanation;
+        }
+
+        window.nextQuizQuestion = function() {
+            playTone('click');
+            currentQuizIndex++;
+            if (currentQuizIndex < QUIZ_QUESTIONS.length) {
+                renderQuizQuestion();
+            } else {
+                showQuizResult();
+            }
+        };
+
+        function showQuizResult() {
+            document.getElementById('quiz-question-container').classList.add('hidden');
+            document.getElementById('quiz-result-container').classList.remove('hidden');
+
+            const finalScoreEl = document.getElementById('quiz-final-score');
+            const finalMsgEl = document.getElementById('quiz-final-message');
+            finalScoreEl.textContent = `${quizScoreCount} / ${QUIZ_QUESTIONS.length}`;
+
+            if (quizScoreCount === QUIZ_QUESTIONS.length) {
+                playTone('win');
+                finalMsgEl.textContent = "Xuất sắc! Bạn đã trả lời đúng toàn bộ các câu hỏi và nắm rất sâu sắc nội dung tác phẩm 'Người thầy đầu tiên'.";
+            } else if (quizScoreCount >= 7) {
+                playTone('win');
+                finalMsgEl.textContent = "Rất tốt! Bạn đã hiểu bài rất kỹ và nắm bắt đầy đủ những chi tiết quan trọng trong câu chuyện.";
+            } else {
+                finalMsgEl.textContent = "Bạn đã hoàn thành chặng 1. Hãy đọc lại tác phẩm hoặc thử chơi lại để đạt kết quả cao hơn nhé!";
+            }
+        }
+
+        window.restartQuiz = function() {
+            playTone('click');
+            currentQuizIndex = 0;
+            quizScoreCount = 0;
+            quizStreak = 0;
+            renderQuizQuestion();
+        };
+
+        // ------------------------------------------------------------------
+        // 5. LOGIC TRÒ CHƠI 2: GHÉP NỐI KÝ ỨC
+        // ------------------------------------------------------------------
+        window.initMatchingGame = function() {
+            playTone('click');
+            selectedLeftMatch = null;
+            matchedIds.clear();
+            document.getElementById('match-success-banner').classList.add('hidden');
+
+            const leftCol = document.getElementById('match-left-col');
+            const rightCol = document.getElementById('match-right-col');
+            leftCol.innerHTML = '';
+            rightCol.innerHTML = '';
+
+            const shuffledLeft = [...MATCH_PAIRS].sort(() => Math.random() - 0.5);
+            const shuffledRight = [...MATCH_PAIRS].sort(() => Math.random() - 0.5);
+
+            shuffledLeft.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = "game-btn w-full text-left p-3.5 rounded-xl bg-white border border-autumn-300 hover:border-autumn-500 text-autumn-900 font-bold text-xs sm:text-sm flex items-center justify-between transition shadow-sm";
+                btn.id = `match-l-${item.id}`;
+                btn.innerHTML = `<span>${item.left}</span><i class="fa-solid fa-chevron-right text-xs text-autumn-400"></i>`;
+                btn.onclick = () => selectLeftCard(item.id);
+                leftCol.appendChild(btn);
+            });
+
+            shuffledRight.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = "game-btn w-full text-left p-3.5 rounded-xl bg-white border border-autumn-300 hover:border-autumn-500 text-autumn-900 font-medium text-xs sm:text-sm transition shadow-sm";
+                btn.id = `match-r-${item.id}`;
+                btn.textContent = item.right;
+                btn.onclick = () => selectRightCard(item.id);
+                rightCol.appendChild(btn);
+            });
+        };
+
+        function selectLeftCard(id) {
+            if (matchedIds.has(id)) return;
+            playTone('click');
+            document.querySelectorAll('#match-left-col button').forEach(b => {
+                if (!b.classList.contains('bg-emerald-100')) {
+                    b.className = "game-btn w-full text-left p-3.5 rounded-xl bg-white border border-autumn-300 text-autumn-900 font-bold text-xs sm:text-sm flex items-center justify-between shadow-sm";
+                }
+            });
+            selectedLeftMatch = id;
+            const btn = document.getElementById(`match-l-${id}`);
+            btn.className = "game-btn w-full text-left p-3.5 rounded-xl bg-amber-100 border-2 border-amber-500 text-amber-950 font-bold text-xs sm:text-sm flex items-center justify-between shadow-md";
+        }
+
+        function selectRightCard(rightId) {
+            if (!selectedLeftMatch || matchedIds.has(rightId)) return;
+            playTone('click');
+
+            const lBtn = document.getElementById(`match-l-${selectedLeftMatch}`);
+            const rBtn = document.getElementById(`match-r-${rightId}`);
+
+            if (selectedLeftMatch === rightId) {
+                playTone('correct');
+                matchedIds.add(rightId);
+                addScore(15);
+
+                lBtn.className = "game-btn w-full text-left p-3.5 rounded-xl bg-emerald-100 border-2 border-emerald-500 text-emerald-950 font-bold text-xs sm:text-sm flex items-center justify-between opacity-80 cursor-default shadow-inner";
+                lBtn.disabled = true;
+                rBtn.className = "game-btn w-full text-left p-3.5 rounded-xl bg-emerald-100 border-2 border-emerald-500 text-emerald-950 font-semibold text-xs sm:text-sm opacity-80 cursor-default shadow-inner";
+                rBtn.disabled = true;
+
+                selectedLeftMatch = null;
+
+                if (matchedIds.size === MATCH_PAIRS.length) {
+                    playTone('win');
+                    addScore(30);
+                    document.getElementById('match-success-banner').classList.remove('hidden');
+                }
+            } else {
+                playTone('wrong');
+                rBtn.className = "game-btn w-full text-left p-3.5 rounded-xl bg-rose-100 border-2 border-rose-500 text-rose-950 font-medium text-xs sm:text-sm transition";
+                setTimeout(() => {
+                    rBtn.className = "game-btn w-full text-left p-3.5 rounded-xl bg-white border border-autumn-300 hover:border-autumn-500 text-autumn-900 font-medium text-xs sm:text-sm transition shadow-sm";
+                }, 600);
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 6. LOGIC TRÒ CHƠI 3: GIẢI MÃ TỪ KHÓA
+        // ------------------------------------------------------------------
+        function renderScrambleWord() {
+            const item = SCRAMBLE_WORDS[currentScrambleIndex];
+            document.getElementById('scramble-counter').textContent = `Từ khóa ${currentScrambleIndex + 1} / ${SCRAMBLE_WORDS.length}`;
+            document.getElementById('scramble-hint').textContent = item.hint;
+            document.getElementById('scramble-input').value = '';
+            document.getElementById('scramble-feedback').classList.add('hidden');
+
+            const lettersContainer = document.getElementById('scramble-letters');
+            lettersContainer.innerHTML = '';
+
+            const scrambled = item.displayWord.split('').sort(() => Math.random() - 0.5);
+            scrambled.forEach(char => {
+                const span = document.createElement('span');
+                span.className = "w-10 h-10 rounded-xl bg-autumn-100 border border-autumn-300 text-autumn-900 font-serif font-bold text-base flex items-center justify-center shadow-sm uppercase";
+                span.textContent = char;
+                lettersContainer.appendChild(span);
+            });
+        }
+
+        window.checkScrambleAnswer = function() {
+            const inputVal = document.getElementById('scramble-input').value.trim().toUpperCase().replace(/\s+/g, '');
+            const currentItem = SCRAMBLE_WORDS[currentScrambleIndex];
+            const targetWord = currentItem.word.toUpperCase();
+            const feedbackBox = document.getElementById('scramble-feedback');
+
+            feedbackBox.classList.remove('hidden');
+
+            if (inputVal === targetWord) {
+                playTone('correct');
+                addScore(20);
+                feedbackBox.className = "text-center text-xs sm:text-sm font-semibold p-3 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-300";
+                feedbackBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Chính xác! Đáp án đúng là: <b>${currentItem.displayWord}</b>`;
+                solvedScrambles.add(currentScrambleIndex);
+
+                setTimeout(() => {
+                    currentScrambleIndex = (currentScrambleIndex + 1) % SCRAMBLE_WORDS.length;
+                    renderScrambleWord();
+                }, 1800);
+            } else {
+                playTone('wrong');
+                feedbackBox.className = "text-center text-xs sm:text-sm font-semibold p-3 rounded-xl bg-rose-100 text-rose-900 border border-rose-300";
+                feedbackBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Chưa đúng, bạn hãy thử suy nghĩ lại hoặc xem gợi ý nhé!`;
+            }
+        };
+
+        window.revealScrambleHint = function() {
+            playTone('click');
+            const currentItem = SCRAMBLE_WORDS[currentScrambleIndex];
+            const inputField = document.getElementById('scramble-input');
+            inputField.value = currentItem.displayWord.charAt(0);
+            inputField.focus();
+        };
+
+        window.nextScrambleWord = function() {
+            playTone('click');
+            currentScrambleIndex = (currentScrambleIndex + 1) % SCRAMBLE_WORDS.length;
+            renderScrambleWord();
+        };
+
+        // ------------------------------------------------------------------
+        // 7. LƯU TRỮ ĐÁM MÂY TRỰC TUYẾN (FIRESTORE) CHO GÓC CHIA SẺ HỌC SINH
+        // ------------------------------------------------------------------
+        async function initFirebaseAndComments() {
+            renderCommentsList();
+
+            try {
+                if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+                    setConnectionStatus(false, "Đang chờ kết nối đám mây...");
+                    return;
+                }
+
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (user) {
+                        document.getElementById('user-id-display').textContent = `Mã học sinh trực tuyến: ${user.uid}`;
+                        subscribeToPublicComments();
+                    }
+                });
+            } catch (err) {
+                setConnectionStatus(false, "Lỗi kết nối trực tuyến");
+            }
+        }
+
+        function setConnectionStatus(isCloud, labelText) {
+            const badge = document.getElementById('connection-indicator');
+            if (isCloud) {
+                badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> ${labelText}`;
+            } else {
+                badge.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800";
+                badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-[9px]"></i> ${labelText}`;
+            }
+        }
+
+        function subscribeToPublicComments() {
+            if (!currentUser || !db) return;
+
+            const commentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'student_comments');
+
+            onSnapshot(commentsRef, (snapshot) => {
+                const fetched = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    fetched.push({
+                        id: docSnap.id,
+                        studentName: data.studentName || "Học sinh",
+                        studentClass: data.studentClass || "",
+                        topic: data.topic || "Cảm nhận chung",
+                        content: data.content || "",
+                        likes: Number(data.likes || 0),
+                        createdAt: Number(data.createdAt || Date.now()),
+                        authorUid: data.authorUid || ""
+                    });
+                });
+                cloudComments = fetched.sort((a, b) => b.createdAt - a.createdAt);
+                setConnectionStatus(true, "Trực tuyến • Thời gian thực");
+                renderCommentsList();
+            }, (error) => {
+                setConnectionStatus(false, "Gián đoạn kết nối");
+            });
+        }
+
+        function getAllMergedComments() {
+            return [...cloudComments].sort((a, b) => b.createdAt - a.createdAt);
+        }
+
+        window.submitStudentComment = async function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('student-name');
+            const classInput = document.getElementById('student-class');
+            const topicInput = document.getElementById('comment-topic');
+            const contentInput = document.getElementById('comment-content');
+            const submitBtn = document.getElementById('submit-comment-btn');
+
+            const studentName = nameInput.value.trim();
+            const studentClass = classInput.value.trim();
+            const topic = topicInput.value;
+            const content = contentInput.value.trim();
+
+            if (!studentName || !studentClass || !content) return;
+
+            if (!db || !currentUser) {
+                showFormFeedback("Đang thiết lập kết nối trực tuyến, bạn vui lòng thử lại sau giây lát!", false);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang đăng trực tuyến...`;
+
+            const newCommentObj = {
+                studentName,
+                studentClass,
+                topic,
+                content,
+                likes: 0,
+                createdAt: Date.now(),
+                authorUid: currentUser.uid
+            };
+
+            try {
+                const commentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'student_comments');
+                await addDoc(commentsRef, newCommentObj);
+
+                playTone('win');
+                addScore(25);
+                contentInput.value = '';
+                showFormFeedback("Đã đăng bài chia sẻ trực tuyến thành công! Mọi người đều có thể xem ngay (+25 điểm)", true);
+            } catch (error) {
+                showFormFeedback("Không thể gửi bài chia sẻ. Vui lòng kiểm tra lại kết nối!", false);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Lưu Vào Sổ Lưu Bút Lớp Học`;
+            }
+        };
+
+        function showFormFeedback(msg, isSuccess) {
+            const box = document.getElementById('form-status-msg');
+            box.classList.remove('hidden');
+            box.className = isSuccess
+                ? "text-xs font-semibold p-3 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-300"
+                : "text-xs font-semibold p-3 rounded-xl bg-rose-100 text-rose-900 border border-rose-300";
+            box.innerHTML = `<i class="fa-solid ${isSuccess ? 'fa-circle-check' : 'fa-circle-exclamation'} mr-1"></i> ${msg}`;
+            setTimeout(() => {
+                box.classList.add('hidden');
+            }, 4500);
+        }
+
+        window.likeComment = async function(commentId) {
+            if (likedCommentIds.has(commentId) || !db || !currentUser) return;
+            likedCommentIds.add(commentId);
+            playTone('click');
+
+            const cloudTarget = cloudComments.find(c => c.id === commentId);
+            if (cloudTarget) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'student_comments', commentId);
+                    await updateDoc(docRef, {
+                        likes: (cloudTarget.likes || 0) + 1
+                    });
+                } catch (err) {
+                    likedCommentIds.delete(commentId);
+                }
+            }
+        };
+
+        window.openDeleteModal = function(commentId) {
+            pendingDeleteId = commentId;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        };
+
+        window.closeDeleteModal = function() {
+            pendingDeleteId = null;
+            document.getElementById('delete-modal').classList.add('hidden');
+        };
+
+        window.confirmDeleteComment = async function() {
+            if (!pendingDeleteId || !db || !currentUser) return;
+            const btn = document.getElementById('confirm-delete-btn');
+            btn.disabled = true;
+            btn.textContent = "Đang xóa...";
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'student_comments', pendingDeleteId);
+                await deleteDoc(docRef);
+                playTone('click');
+            } catch (err) {
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Đồng ý xóa";
+                closeDeleteModal();
+            }
+        };
+
+        window.insertPromptSuggestion = function() {
+            const suggestions = [
+                "Chi tiết làm mình xúc động nhất trong truyện là khi thầy Đuysen...",
+                "Qua hình ảnh hai cây phong trên đồi Kurkurêu, nhà văn Tsinghiz Aitmatov đã giúp mình hiểu rằng...",
+                "Nếu được gửi một bức thư vượt thời gian đến thầy giáo Đuysen, mình muốn nói với thầy rằng...",
+                "Sự thay đổi số phận của Antưnai từ một cô bé mồ côi đến một nữ Viện sĩ chứng minh sức mạnh kỳ diệu của..."
+            ];
+            const randomPrompt = suggestions[Math.floor(Math.random() * suggestions.length)];
+            const textarea = document.getElementById('comment-content');
+            if (!textarea.value.trim()) {
+                textarea.value = randomPrompt;
+            } else {
+                textarea.value += "\n" + randomPrompt;
+            }
+            textarea.focus();
+        };
+
+        function formatRelativeTime(timestamp) {
+            const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+            if (diffSec < 60) return "Vừa xong";
+            const diffMin = Math.floor(diffSec / 60);
+            if (diffMin < 60) return `${diffMin} phút trước`;
+            const diffHour = Math.floor(diffMin / 60);
+            if (diffHour < 24) return `${diffHour} giờ trước`;
+            const diffDay = Math.floor(diffHour / 24);
+            return `${diffDay} ngày trước`;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        window.renderCommentsList = function() {
+            const allComments = getAllMergedComments();
+            document.getElementById('comment-badge').textContent = allComments.length;
+
+            const searchKeyword = (document.getElementById('filter-search')?.value || '').trim().toLowerCase();
+            const selectedTopic = document.getElementById('filter-topic')?.value || 'ALL';
+
+            const filtered = allComments.filter(item => {
+                const matchTopic = selectedTopic === 'ALL' || item.topic === selectedTopic;
+                const matchSearch = !searchKeyword ||
+                    item.studentName.toLowerCase().includes(searchKeyword) ||
+                    item.studentClass.toLowerCase().includes(searchKeyword) ||
+                    item.content.toLowerCase().includes(searchKeyword);
+                return matchTopic && matchSearch;
+            });
+
+            const container = document.getElementById('comments-list-container');
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="card-glass p-10 rounded-3xl text-center space-y-3 border-2 border-dashed border-autumn-300">
+                        <div class="w-14 h-14 rounded-2xl bg-autumn-100 text-autumn-600 flex items-center justify-center mx-auto text-2xl">
+                            <i class="fa-solid fa-feather-pointed"></i>
+                        </div>
+                        <h4 class="font-serif font-bold text-base sm:text-lg text-autumn-900">Chưa có bài chia sẻ nào được đăng</h4>
+                        <p class="text-xs sm:text-sm text-autumn-700 max-w-md mx-auto leading-relaxed">
+                            Sổ Lưu Bút trực tuyến đang chờ những dòng cảm nhận đầu tiên! Hãy điền thông tin ở khung bên trái để chia sẻ suy nghĩ của bạn cùng cả lớp nhé.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const isLiked = likedCommentIds.has(item.id);
+                const isOwner = currentUser && item.authorUid === currentUser.uid;
+                const initials = item.studentName.split(' ').map(n => n[0]).join('').slice(-2).toUpperCase();
+
+                const card = document.createElement('article');
+                card.className = "card-glass p-5 rounded-2xl shadow-sm hover:shadow-md transition space-y-3";
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-autumn-500 to-autumn-700 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
+                                ${escapeHtml(initials)}
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h4 class="font-bold text-sm text-autumn-950">${escapeHtml(item.studentName)}</h4>
+                                    <span class="px-2 py-0.5 rounded-md bg-autumn-200/80 text-autumn-900 font-bold text-[11px]">Lớp ${escapeHtml(item.studentClass)}</span>
+                                    ${isOwner ? '<span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-semibold text-[10px]">Bài của bạn</span>' : ''}
+                                </div>
+                                <span class="text-[11px] text-autumn-600">${formatRelativeTime(item.createdAt)}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="px-2.5 py-1 rounded-full bg-autumn-100 border border-autumn-300 text-autumn-800 text-[11px] font-semibold">
+                                ${escapeHtml(item.topic)}
+                            </span>
+                            ${isOwner ? `
+                                <button onclick="openDeleteModal('${item.id}')" class="w-7 h-7 rounded-lg text-autumn-500 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition" title="Xóa bài của bạn">
+                                    <i class="fa-regular fa-trash-can text-xs"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <p class="text-xs sm:text-sm text-autumn-900 leading-relaxed whitespace-pre-line pl-3 border-l-2 border-autumn-400">${escapeHtml(item.content)}</p>
+
+                    <div class="pt-2 flex items-center justify-between border-t border-autumn-200/60 text-xs">
+                        <span class="text-[11px] text-autumn-600 italic"><i class="fa-brands fa-canadian-maple-leaf mr-1"></i>Đồi phong Kurkurêu</span>
+                        <button onclick="likeComment('${item.id}')" class="px-3 py-1 rounded-full border transition flex items-center gap-1.5 font-semibold ${isLiked ? 'bg-rose-50 border-rose-300 text-rose-600' : 'bg-white border-autumn-200 text-autumn-700 hover:bg-autumn-100'}">
+                            <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-rose-500"></i>
+                            <span>Đồng cảm (${item.likes})</span>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        };
+
+        window.exportCommentsToText = function() {
+            const allComments = getAllMergedComments();
+            let textContent = "SỔ LƯU BÚT & BÌNH LUẬN TÁC PHẨM: NGƯỜI THẦY ĐẦU TIÊN (TSINGHIZ AITMATOV)\n";
+            textContent += "=====================================================================\n\n";
+            allComments.forEach((c, idx) => {
+                textContent += `${idx + 1}. Học sinh: ${c.studentName} (Lớp: ${c.studentClass})\n`;
+                textContent += `   Chủ đề: ${c.topic} | Lượt đồng cảm: ${c.likes}\n`;
+                textContent += `   Cảm nhận: ${c.content}\n`;
+                textContent += "---------------------------------------------------------------------\n";
+            });
+
+            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SoLuuBut_NguoiThayDauTien.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        // ------------------------------------------------------------------
+        // 8. KHỞI TẠO LÁ PHONG RƠI & KHỞI CHẠY ỨNG DỤNG
+        // ------------------------------------------------------------------
+        function createFallingLeaves() {
+            const container = document.getElementById('leaves-container');
+            const leafColors = ['#d97706', '#b45309', '#f59e0b', '#9a3412'];
+            for (let i = 0; i < 12; i++) {
+                const leaf = document.createElement('div');
+                leaf.className = 'leaf';
+                leaf.style.left = `${Math.random() * 100}vw`;
+                leaf.style.animationDuration = `${12 + Math.random() * 15}s`;
+                leaf.style.animationDelay = `${Math.random() * 8}s`;
+                leaf.style.fontSize = `${14 + Math.random() * 10}px`;
+                leaf.style.color = leafColors[i % leafColors.length];
+                leaf.innerHTML = `<i class="fa-brands fa-canadian-maple-leaf"></i>`;
+                container.appendChild(leaf);
+            }
+        }
+
+        window.onload = function() {
+            createFallingLeaves();
+            renderQuizQuestion();
+            initMatchingGame();
+            renderScrambleWord();
+            initFirebaseAndComments();
+        };
+    </script>
+</body>
+</html>
